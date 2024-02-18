@@ -1,22 +1,56 @@
-import React ,{useState}from 'react'
+import React ,{useEffect, useState}from 'react'
+import axios from 'axios'
 
 export default function MainPage() {
 //states for the form field
-const [date,setDate] = useState(null)
+const [date,setDate] = useState()
 const [sourceCurrency,setSourceCurrency] = useState("")
 const [targetCurrency,setTargetCurrency] = useState("")
 const [amountInSourceCurrency,setAmountInSourceCurrency] = useState(0)
 const [amountInTargetCurrency,setAmountInTargetCurrency] = useState(0)
+const [sourceCurrencyName, setSourceCurrencyName] = useState("");
+const [targetCurrencyName, setTargetCurrencyName] = useState("");
+const [currencyNames,setCurrencyName] = useState([]);
+const [loading,setLoading] = useState(true)
+const [pressed, setPressed] = useState(false);
+//get all currency names
+useEffect(()=>{
+  const getCurrencyNames = async() =>{
+    try{
+
+      const response = await axios.get(
+        "http://localhost:5000/getAllCurrencies"
+      )
+      setCurrencyName(response.data)
+    }
+    catch(err){
+      console.log(err)
+    }
+  }
+  getCurrencyNames();
+},[])
 
 //handle submit method
-const handleSubmit = (e) =>{
+const handleSubmit = async (e) =>{
     e.preventDefault();
-    console.log(
-        date,
-        setSourceCurrency,
-        targetCurrency,
-        amountInSourceCurrency
-    );
+    setPressed(true)
+    try{
+      const response = await axios.get("http://localhost:5000/convert",{
+        params:{
+          date,
+          sourceCurrency,
+          targetCurrency,
+          amountInSourceCurrency,
+        },
+      })
+
+      setAmountInTargetCurrency(response.data)
+      setLoading(false)
+
+    }
+    catch(err){
+      console.error(err)
+    }
 };
 
 
@@ -77,7 +111,11 @@ const handleSubmit = (e) =>{
                 placeholder="Select source currency"
                 required
               >
-                <option>Select the source currency</option>
+                {Object.keys(currencyNames).map((currency) =>(
+                  <option className=" p-1">
+                    {currencyNames[currency]}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -101,7 +139,11 @@ const handleSubmit = (e) =>{
                 placeholder="Select target currency"
                 required
               >
-                <option>Select the target currency</option>
+                {Object.keys(currencyNames).map((currency) =>(
+                  <option className=" p-1">
+                    {currencyNames[currency]}
+                  </option>
+                ))}
               </select>
              
             </div>
@@ -131,14 +173,18 @@ const handleSubmit = (e) =>{
                 {" "}Get the target currency</button>
 
 
-
-
-
-
-
           </form>
         </section>
       </div>
+
+      {!loading ?  <section className=' mt-5 lg:mx-60  font-bold text-center'>
+      {amountInSourceCurrency} {currencyNames[sourceCurrency]} is equals to {" "}
+      <span className=' text-blue-400 font-bold'>
+        {" "}
+        {amountInTargetCurrency} {" "}</span>in {currencyNames[targetCurrency]}
+      </section> : null}
+     
+      
     </div>
   );
 }
